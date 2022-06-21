@@ -59,6 +59,11 @@
                 "show_percentage_control": "Percentage control?",
                 "show_oscillate_control": "Oscillate control?"
             },
+            "damper": {
+                "icon_animation": "Animate icon when active?",
+                "show_percentage_control": "Percentage control?",
+                "show_itc_control": "ITC control?"
+            },
             "cover": {
                 "show_buttons_control": "Control buttons?",
                 "show_position_control": "Position control?"
