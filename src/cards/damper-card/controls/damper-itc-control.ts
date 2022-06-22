@@ -12,6 +12,8 @@ export class DamperPercentageControl extends LitElement {
 
     @property({ attribute: false }) public entity!: HassEntity;
 
+    @property({ attribute: false }) public climate_entity!: HassEntity;
+
     private _onTap(e: MouseEvent): void {
         e.stopPropagation();
         const mode = isITCMode(this.entity) ? "Damper" : "ITC";
@@ -25,7 +27,7 @@ export class DamperPercentageControl extends LitElement {
     protected render(): TemplateResult {
         const itc = isITCMode(this.entity);
         const active = isActive(this.entity);
-        var icon = "mdi:hvac";
+        var icon = "mdi:air-filter";
         if (itc) {
           icon = "mdi:thermometer";
         }
@@ -35,7 +37,7 @@ export class DamperPercentageControl extends LitElement {
                 class=${classMap({ active: itc })}
                 .icon=${icon}
                 @click=${this._onTap}
-                .disabled=${!active}
+                .disabled=${!active || !this.climate_entity}
             />
         `;
     }

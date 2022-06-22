@@ -12,19 +12,12 @@ import { loadHaComponents } from "../../utils/loader";
 import { DAMPER_CARD_EDITOR_NAME, DAMPER_ENTITY_DOMAINS } from "./const";
 import { DamperCardConfig, damperCardConfigStruct } from "./damper-card-config";
 
-const DAMPER_LABELS = ["icon_animation", "show_percentage_control", "show_itc_control"];
+const DAMPER_LABELS = ["climate_entity", "show_percentage_control", "show_itc_control"];
 
-const computeSchema = memoizeOne((icon?: string): HaFormSchema[] => [
+const computeSchema = memoizeOne((): HaFormSchema[] => [
     { name: "entity", selector: { entity: { domain: DAMPER_ENTITY_DOMAINS } } },
+    { name: "climate_entity", selector: { entity: { domain: "climate" } } },
     { name: "name", selector: { text: {} } },
-    {
-        type: "grid",
-        name: "",
-        schema: [
-            { name: "icon", selector: { icon: { placeholder: icon } } },
-            { name: "icon_animation", selector: { boolean: {} } },
-        ],
-    },
     {
         type: "grid",
         name: "",
@@ -32,6 +25,7 @@ const computeSchema = memoizeOne((icon?: string): HaFormSchema[] => [
             { name: "layout", selector: { "mush-layout": {} } },
             { name: "fill_container", selector: { boolean: {} } },
             { name: "hide_state", selector: { boolean: {} } },
+            { name: "collapsible_controls", selector: { boolean: {} } },
         ],
     },
     {
@@ -40,7 +34,6 @@ const computeSchema = memoizeOne((icon?: string): HaFormSchema[] => [
         schema: [
             { name: "show_percentage_control", selector: { boolean: {} } },
             { name: "show_itc_control", selector: { boolean: {} } },
-            { name: "collapsible_controls", selector: { boolean: {} } },
         ],
     },
     { name: "tap_action", selector: { "mush-action": {} } },
@@ -79,10 +72,7 @@ export class DamperCardEditor extends MushroomBaseElement implements LovelaceCar
             return html``;
         }
 
-        const entityState = this._config.entity ? this.hass.states[this._config.entity] : undefined;
-        const entityIcon = entityState ? stateIcon(entityState) : undefined;
-        const icon = this._config.icon || entityIcon;
-        const schema = computeSchema(icon);
+        const schema = computeSchema();
 
         return html`
             <ha-form

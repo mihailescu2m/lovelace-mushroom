@@ -23,6 +23,7 @@ import "../../shared/state-info";
 import "../../shared/state-item";
 import { MushroomBaseElement } from "../../utils/base-element";
 import { cardStyle } from "../../utils/card-styles";
+import { computeRgbColor } from "../../utils/colors";
 import { registerCustomCard } from "../../utils/custom-cards";
 import { stateIcon } from "../../utils/icons/state-icon";
 import { getLayoutFromConfig } from "../../utils/layout";
@@ -30,7 +31,7 @@ import { DAMPER_CARD_EDITOR_NAME, DAMPER_CARD_NAME, DAMPER_ENTITY_DOMAINS } from
 import "./controls/damper-itc-control";
 import "./controls/damper-percentage-control";
 import { DamperCardConfig } from "./damper-card-config";
-import { getPercentage } from "./utils";
+import { getPercentage, getTargetTemp, getCurrentTemp } from "./utils";
 
 registerCustomCard({
     type: DAMPER_CARD_NAME,
@@ -111,36 +112,70 @@ export class DamperCard extends MushroomBaseElement implements LovelaceCard {
 
         const entity_id = this._config.entity;
         const entity = this.hass.states[entity_id];
+        var climate_entity;
 
         const name = this._config.name || entity.attributes.friendly_name;
-        const icon = this._config.icon || stateIcon(entity);
         const layout = getLayoutFromConfig(this._config);
         const hideState = this._config.hide_state;
 
-        const stateDisplay = computeStateDisplay(this.hass.localize, entity, this.hass.locale);
+        let icon = "mdi:air-conditioner";
+        let iconStyle = {};
+        let iconColor = "green";
 
+        const stateDisplay = computeStateDisplay(this.hass.localize, entity, this.hass.locale);
+        let stateValue = `${stateDisplay}`;
         const active = isActive(entity);
 
-        let iconStyle = {};
-        const percentage = getPercentage(entity);
-        if (active) {
-            if (percentage) {
-                const speed = 1.5 * (percentage / 100) ** 0.5;
-                iconStyle["--animation-duration"] = `${1 / speed}s`;
-            } else {
-                iconStyle["--animation-duration"] = `1s`;
+        if (this._config.climate_entity) {
+            const climate_entity_id = this._config.climate_entity;
+            climate_entity = this.hass.states[climate_entity_id];
+            if (climate_entity) {
+                const temperature = getCurrentTemp(climate_entity);
+                const climateState = computeStateDisplay(this.hass.localize, climate_entity, this.hass.locale).toLowerCase();
+                if (stateDisplay === "Off") {
+                    icon = "mdi:power";
+                    iconColor = "#8a8a8a";
+                } else if (climateState === "heating") {
+                    icon = "mdi:fire";
+                    iconColor = "#ff8100";
+                } else if (climateState === "cooling") {
+                    icon = "mdi:snowflake";
+                    iconColor = "#2b9af9";
+                } else if (climateState === "auto") {
+                    icon = "mdi:autorenew";
+                    iconColor = "green";
+                } else if (climateState === "drying") {
+                    icon = "mdi:water-percent";
+                    iconColor = "#efbd07";
+                } else if (climateState === "fan") {
+                    icon = "mdi:fan";
+                    iconColor = "#8a8a8a";
+                } else if (climateState === "idle") {
+                    icon = "mdi:power";
+                    iconColor = "#8a8a8a";
+                } else {
+                    icon = "mdi:air-conditioner";
+                }
+            	const iconRgbColor = computeRgbColor(iconColor);
+            	iconStyle["--icon-color"] = `rgb(${iconRgbColor})`;
+            	iconStyle["--shape-color"] = `rgba(${iconRgbColor}, 0.2)`;
+
+                stateValue = `${temperature}°C`;
+                if (!this.percentage && active) {
+                  const target = getTargetTemp(climate_entity);
+                  stateValue += ` |-> ${target}°C`;
+                }
             }
         }
 
-        let stateValue = `${stateDisplay}`;
         if (this.percentage) {
-            stateValue += ` - ${this.percentage}%`;
+            stateValue += ` | ${this.percentage}%`;
         }
 
         const rtl = computeRTL(this.hass);
 
         const displayControls =
-            (!this._config.collapsible_controls || isActive(entity)) &&
+            (!this._config.collapsible_controls || active) &&
             (this._config.show_percentage_control || this._config.show_itc_control);
 
         return html`
@@ -157,9 +192,6 @@ export class DamperCard extends MushroomBaseElement implements LovelaceCard {
                     >
                         <mushroom-shape-icon
                             slot="icon"
-                            class=${classMap({
-                                spin: active && !!this._config.icon_animation,
-                            })}
                             style=${styleMap(iconStyle)}
                             .disabled=${!active}
                             .icon=${icon}
@@ -196,6 +228,7 @@ export class DamperCard extends MushroomBaseElement implements LovelaceCard {
                                             <mushroom-damper-itc-control
                                                 .hass=${this.hass}
                                                 .entity=${entity}
+                                                .climate_entity=${climate_entity}
                                             ></mushroom-damper-itc-control>
                                         `
                                       : null}
@@ -214,13 +247,6 @@ export class DamperCard extends MushroomBaseElement implements LovelaceCard {
             css`
                 mushroom-state-item {
                     cursor: pointer;
-                }
-                mushroom-shape-icon {
-                    --icon-color: rgb(var(--rgb-state-fan));
-                    --shape-color: rgba(var(--rgb-state-fan), 0.2);
-                }
-                mushroom-shape-icon.spin {
-                    --icon-animation: var(--animation-duration) infinite linear spin;
                 }
                 mushroom-shape-icon ha-icon {
                     color: red !important;

@@ -40,7 +40,7 @@ export class DamperPercentageControl extends LitElement {
         return html`
             <mushroom-slider
                 .value=${percentage}
-                .disabled=${!isAvailable(this.entity)}
+                .disabled=${isITCMode(this.entity)}
                 .inactive=${!isActive(this.entity)}
                 .showActive=${true}
                 @change=${this.onChange}
