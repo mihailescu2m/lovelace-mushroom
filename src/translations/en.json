@@ -60,8 +60,8 @@
                 "show_oscillate_control": "Oscillate control?"
             },
             "damper": {
-                "icon_animation": "Animate icon when active?",
                 "show_percentage_control": "Percentage control?",
+                "climate_entity": "Climate entity",
                 "show_itc_control": "ITC control?"
             },
             "cover": {
